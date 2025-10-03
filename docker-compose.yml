@@ -1,0 +1,47 @@
+services:
+  influxdb:
+    container_name: influxdb
+    image: influxdb:${DOCKER_INFLUXDB_VERSION}
+    volumes:
+      - /tmp/:/tmp/host/
+      - influxdb-storage:/var/lib/influxdb2:rw
+    env_file:
+      - .env
+    ports:
+      - 8086:${DOCKER_INFLUXDB_INIT_PORT}
+    networks:
+      metrics:
+        ipv4_address: 172.19.1.5
+    profiles:
+     - data
+
+  grafana:
+    image: rtu/grafana
+    build:
+      context: grafana
+    volumes:
+      - grafana-storage:/var/lib/grafana:rw
+    env_file:
+      - .env
+    depends_on:
+      - influxdb
+    ports:
+      - 3300:${GRAFANA_PORT}
+    networks:
+      metrics:
+        ipv4_address: 172.19.1.6
+    profiles:
+     - data
+
+
+volumes:
+  influxdb-storage:
+  grafana-storage:
+
+networks:
+  metrics:
+    name: docker_metrics
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.19.1.0/24
